@@ -3,21 +3,68 @@
   "displayName": "migemo-isearch",
   "description": "Incremental search with migemo.",
   "version": "0.0.1",
+  "publisher": "sumomoneko",
   "engines": {
     "vscode": "^1.73.0"
   },
+  "author": {
+    "name": "sumomoneko"
+  },
+  "icon": "images/migemo.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sumomoneko/migemo-isearch.git"
+  },
+  "homepage": "https://github.com/sumomoneko/migemo-isearch/",
   "categories": [
     "Other"
   ],
+  "license": "MIT",
+  "keywords": [
+    "Migemo",
+    "Search"
+  ],
   "activationEvents": [
-    "onCommand:migemo-isearch.helloWorld"
+    "onCommand:migemo-isearch.isearch-forward",
+    "onCommand:migemo-isearch.isearch-backward"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "migemo-isearch.helloWorld",
-        "title": "Hello World"
+        "command": "migemo-isearch.isearch-forward",
+        "title": "isearch forward with migemo"
+      },
+      {
+        "command": "migemo-isearch.isearch-backward",
+        "title": "isearch backward with migemo"
+      }
+    ],
+    "keybindings": [
+      {
+        "key": "ctrl+s",
+        "command": "migemo-isearch.isearch-forward",
+        "when": "editorTextFocus"
+      },
+      {
+        "key": "ctrl+r",
+        "command": "migemo-isearch.isearch-backward",
+        "when": "editorTextFocus"
+      },
+      {
+        "key": "ctrl+g",
+        "command": "migemo-isearch.cancel",
+        "when": "migemo-isearch.inIsearchMode"
+      },
+      {
+        "key": "ctrl+s",
+        "command": "migemo-isearch.isearch-forward",
+        "when": "migemo-isearch.inIsearchMode"
+      },
+      {
+        "key": "ctrl+r",
+        "command": "migemo-isearch.isearch-backward",
+        "when": "migemo-isearch.inIsearchMode"
       }
     ]
   },
