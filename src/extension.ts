@@ -194,7 +194,7 @@ const moveCursor = (
  * @param editor
  * @param queryStr クエリ文字列
  * @param cursor 検索開始位置
- * @returns [マッチした文字列[], 検索開始位置から一番近いマッチ文字列インデックス]
+ * @returns [マッチした文字列[], 検索開始位置から前方に向け一番近いマッチ文字列インデックス]
  */
 const search = (
   migemo: jsmigemo.Migemo,
@@ -336,12 +336,17 @@ class StateInit implements State {
           initialSelection: editor.selection,
           inIsearchMode: new ContextKey("migemo-isearch.inIsearchMode"),
         };
-        return new StateSearching(searchContext);
+        return new StateSearching(searchContext, true);
       }
 
       case "isearchBackward": {
-        // TODO
-        throw new Error('Not implemented yet: "isearchBackward" case');
+        const searchContext: SearchContext = {
+          context: this.context_,
+          editor,
+          initialSelection: editor.selection,
+          inIsearchMode: new ContextKey("migemo-isearch.inIsearchMode"),
+        };
+        return new StateSearching(searchContext, false);
       }
 
       default:
@@ -371,9 +376,13 @@ class StateSearching implements State {
 
   private subState_: State;
 
-  constructor(searchContext: SearchContext) {
+  constructor(searchContext: SearchContext, isForward: boolean) {
     this.searchContext_ = searchContext;
-    this.subState_ = new SubStateEmpty(this.searchContext_);
+    if (isForward) {
+      this.subState_ = new SubStateEmpty(this.searchContext_);
+    } else {
+      this.subState_ = new SubStateEmptyBackward(this.searchContext_);
+    }
   }
 
   enter(): void {
@@ -383,7 +392,6 @@ class StateSearching implements State {
 
     // init input box
     const ib = this.searchContext_.context.inputBox;
-    ib.title = "ISearch migemo";
     ib.placeholder = "Query";
     ib.step = 0;
     ib.totalSteps = 0;
@@ -454,6 +462,7 @@ class SubStateEmpty implements State {
 
     // input box 調整
     const ib = this.searchContext_.context.inputBox;
+    ib.title = "ISearch migemo";
     ib.step = 0;
     ib.totalSteps = 0;
     ib.validationMessage = "";
@@ -477,44 +486,79 @@ class SubStateEmpty implements State {
     console.debug("SubStateEmpty: transition()", event);
 
     switch (event.kind) {
-      case "isearchForward": {
+      case "isearchForward":
         // TODO 検索ringからもってくる
-        throw new Error('Not implemented yet: "isearchForward" case');
-      }
+        console.info("Not implemented yet");
+        break;
 
-      case "isearchBackward": {
+      case "isearchBackward":
         // TODO 検索ringからもってくる
-        throw new Error('Not implemented yet: "isearchBackward" case');
-      }
+        console.info("Not implemented yet");
+        break;
 
-      case "queryChanged": {
-        const queryStr = event.query;
-        if (queryStr === "") {
-          return undefined;
-        }
-        // 検索
-        const [matches, idx] = search(
-          this.searchContext_.context.migemo,
-          this.searchContext_.editor,
-          queryStr,
-          this.searchContext_.initialSelection
-        );
+      case "queryChanged":
+        // クエリ変更
+        return onQueryChangedForward(this.searchContext_, event.query);
 
-        const matchContext: MatchContext = {
-          searchContext: this.searchContext_,
-          matches,
-          initialMatchIndex: idx,
-          currentMatchIndex: idx,
-        };
+      default:
+        break;
+    }
+    return undefined;
+  }
+}
+/** 後方検索中・クエリ文字列なし状態
+ *
+ */
+class SubStateEmptyBackward implements State {
+  private searchContext_: SearchContext;
 
-        if (idx !== -1) {
-          // 見つかった
-          return new SubStateSearching(matchContext);
-        } else {
-          // 見つからない
-          return new SubStateReachedEnd(matchContext);
-        }
-      }
+  constructor(searchContext: SearchContext) {
+    this.searchContext_ = searchContext;
+  }
+
+  enter(): void {
+    console.debug("SubStateEmptyBackward: enter()");
+
+    // input box 調整
+    const ib = this.searchContext_.context.inputBox;
+    ib.title = "ISearch migemo Backward";
+    ib.step = 0;
+    ib.totalSteps = 0;
+    ib.validationMessage = "";
+
+    // 装飾をクリア
+    updateDecoration(this.searchContext_.editor, [], -1);
+
+    // カーソル移動
+    moveCursor(
+      this.searchContext_.editor,
+      this.searchContext_.initialSelection
+    );
+  }
+
+  exit(): void {
+    console.debug("SubStateEmptyBackward: exit()");
+    // nop
+  }
+
+  transition(event: Event): State | undefined {
+    console.debug("SubStateEmptyBackward: transition()", event);
+
+    switch (event.kind) {
+      case "isearchForward":
+        // TODO 検索ringからもってくる
+        console.info("Not implemented yet");
+        break;
+
+      case "isearchBackward":
+        // TODO 検索ringからもってくる
+        console.info("Not implemented yet");
+        break;
+
+      case "queryChanged":
+        // クエリ変更
+        return onQueryChangedBackward(this.searchContext_, event.query);
+
       default:
         break;
     }
@@ -522,7 +566,7 @@ class SubStateEmpty implements State {
   }
 }
 
-/** 検索中・マッチ状態
+/** 前方検索中・マッチ状態
  *
  */
 class SubStateSearching implements State {
@@ -536,6 +580,7 @@ class SubStateSearching implements State {
     console.debug("SubStateSearching: enter()");
     // input box 調整
     const ib = this.matchContext_.searchContext.context.inputBox;
+    ib.title = "ISearch migemo";
     ib.step = this.matchContext_.currentMatchIndex + 1;
     ib.totalSteps = this.matchContext_.matches.length;
     ib.validationMessage = "";
@@ -547,7 +592,7 @@ class SubStateSearching implements State {
       this.matchContext_.currentMatchIndex
     );
 
-    // マッチしている後ろにカーソル移動
+    // マッチしている文字列終端にカーソル移動
     moveCursor(
       this.matchContext_.searchContext.editor,
       this.matchContext_.matches[this.matchContext_.currentMatchIndex].end
@@ -567,51 +612,100 @@ class SubStateSearching implements State {
           this.matchContext_.currentMatchIndex + 1 <
           this.matchContext_.matches.length
         ) {
-          // 次あり
+          // 前方あり
           return new SubStateSearching({
             ...this.matchContext_,
             currentMatchIndex: this.matchContext_.currentMatchIndex + 1,
           });
         } else {
-          // 次無し
+          // 前方無し
           return new SubStateReachedEnd(this.matchContext_);
         }
       }
 
-      case "isearchBackward": {
-        // TODO
-        throw new Error('Not implemented yet: "isearchBackward" case');
-      }
+      case "isearchBackward":
+        // 同じマッチ位置で前方検索から後方検索に移行
+        return new SubStateSearchingBackward(this.matchContext_);
 
-      case "queryChanged": {
-        const queryStr = event.query;
-        if (queryStr === "") {
-          return new SubStateEmpty(this.matchContext_.searchContext);
-        }
-
-        // 検索
-        const [matches, idx] = search(
-          this.matchContext_.searchContext.context.migemo,
-          this.matchContext_.searchContext.editor,
-          queryStr,
-          this.matchContext_.searchContext.initialSelection // TODO DELで過去のマッチ位置に戻る対応。これだと単に最初から探すだけ。
+      case "queryChanged":
+        // クエリ変更
+        return onQueryChangedForward(
+          this.matchContext_.searchContext,
+          event.query
         );
 
-        const matchContext: MatchContext = {
-          searchContext: this.matchContext_.searchContext,
-          matches,
-          initialMatchIndex: idx,
-          currentMatchIndex: idx,
-        };
+      default:
+        break;
+    }
+    return undefined;
+  }
+}
 
-        if (idx !== -1) {
-          // 見つかった
-          return new SubStateSearching(matchContext);
+/** 後方検索中・マッチ状態
+ *
+ */
+class SubStateSearchingBackward implements State {
+  private matchContext_: MatchContext;
+
+  constructor(matchContext: MatchContext) {
+    this.matchContext_ = matchContext;
+  }
+
+  enter(): void {
+    console.debug("SubStateSearchingBackward: enter()");
+    // input box 調整
+    const ib = this.matchContext_.searchContext.context.inputBox;
+    ib.title = "ISearch migemo Backward";
+    ib.step = this.matchContext_.currentMatchIndex + 1;
+    ib.totalSteps = this.matchContext_.matches.length;
+    ib.validationMessage = "";
+
+    // 装飾適用
+    updateDecoration(
+      this.matchContext_.searchContext.editor,
+      this.matchContext_.matches,
+      this.matchContext_.currentMatchIndex
+    );
+
+    // マッチしている文字列先頭にカーソル移動
+    moveCursor(
+      this.matchContext_.searchContext.editor,
+      this.matchContext_.matches[this.matchContext_.currentMatchIndex].start
+    );
+  }
+
+  exit(): void {
+    console.debug("SubStateSearchingBackward: exit()");
+    // nop
+  }
+
+  transition(event: Event): State | undefined {
+    console.debug("SubStateSearchingBackward: transaction(): Event: ", event);
+    switch (event.kind) {
+      case "isearchForward":
+        // 同じマッチ位置で後方検索から前方検索に移行
+        return new SubStateSearching(this.matchContext_);
+
+      case "isearchBackward": {
+        if (this.matchContext_.currentMatchIndex > 0) {
+          // 後方あり
+          return new SubStateSearchingBackward({
+            ...this.matchContext_,
+            currentMatchIndex: this.matchContext_.currentMatchIndex - 1,
+          });
         } else {
-          // 見つからない
-          return new SubStateReachedEnd(matchContext);
+          // 後方無し
+          return new SubStateReachedEndBackward(this.matchContext_);
         }
       }
+
+      case "queryChanged":
+        // クエリ変更
+        return onQueryChangedBackward(
+          this.matchContext_.searchContext,
+          event.query
+        );
+
       default:
         break;
     }
@@ -633,6 +727,7 @@ class SubStateReachedEnd implements State {
     console.debug("SubStateReachedEnd: enter()");
     // input box 調整
     const ib = this.matchContext_.searchContext.context.inputBox;
+    ib.title = "ISearch migemo";
     ib.step = this.matchContext_.currentMatchIndex + 1;
     ib.totalSteps = this.matchContext_.matches.length;
     ib.validationMessage = {
@@ -654,7 +749,7 @@ class SubStateReachedEnd implements State {
     console.debug("SubStateReachedEnd: transaction(): Event: ", event);
     switch (event.kind) {
       case "isearchForward": {
-        // 先頭に戻る
+        // ファイル先頭に戻る
         if (this.matchContext_.matches.length > 0) {
           // ラップ中
           return new SubStateWrapped({
@@ -667,39 +762,100 @@ class SubStateReachedEnd implements State {
         }
       }
       case "isearchBackward": {
-        // TODO
-        throw new Error('Not implemented yet: "isearchBackward" case');
-      }
-      case "queryChanged": {
-        // クエリ変更
-        const queryStr = event.query;
-        if (queryStr === "") {
-          return new SubStateEmpty(this.matchContext_.searchContext);
+        // ファイル末尾から後方検索開始
+        if (this.matchContext_.matches.length > 0) {
+          // ラップ中
+          return new SubStateWrapped({
+            ...this.matchContext_,
+            currentMatchIndex: this.matchContext_.matches.length - 1,
+          });
+        } else {
+          // 移動先がないのでこのまま
+          return undefined;
         }
-
-        // 検索
-        const [matches, idx] = search(
-          this.matchContext_.searchContext.context.migemo,
-          this.matchContext_.searchContext.editor,
-          queryStr,
-          this.matchContext_.searchContext.initialSelection // TODO DELで過去のマッチ位置に戻る対応。これだと単に最初から探すだけ。
+      }
+      case "queryChanged":
+        // クエリ変更
+        return onQueryChangedForward(
+          this.matchContext_.searchContext,
+          event.query
         );
 
-        const matchContext: MatchContext = {
-          searchContext: this.matchContext_.searchContext,
-          matches,
-          initialMatchIndex: idx,
-          currentMatchIndex: idx,
-        };
+      default:
+        break;
+    }
+    return undefined;
+  }
+}
 
-        if (idx !== -1) {
-          // 見つかった
-          return new SubStateSearching(matchContext);
+/** 後方検索中・ファイル先頭まで到達or該当なし状態
+ *
+ */
+class SubStateReachedEndBackward implements State {
+  private matchContext_: MatchContext;
+
+  constructor(matchContext: MatchContext) {
+    this.matchContext_ = matchContext;
+  }
+
+  enter(): void {
+    console.debug("SubStateReachedEndBackward: enter()");
+    // input box 調整
+    const ib = this.matchContext_.searchContext.context.inputBox;
+    ib.title = "ISearch migemo Backward";
+    ib.step = this.matchContext_.currentMatchIndex + 1;
+    ib.totalSteps = this.matchContext_.matches.length;
+    ib.validationMessage = {
+      message: "Failing search Backward",
+      severity: vscode.InputBoxValidationSeverity.Info,
+    };
+
+    updateDecoration(
+      this.matchContext_.searchContext.editor,
+      this.matchContext_.matches,
+      this.matchContext_.currentMatchIndex
+    );
+  }
+  exit(): void {
+    console.debug("SubStateReachedEndBackward: exit()");
+    // nop
+  }
+  transition(event: Event): State | undefined {
+    console.debug("SubStateReachedEndBackward: transaction(): Event: ", event);
+    switch (event.kind) {
+      case "isearchForward": {
+        // ファイル先頭から前方検索開始
+        if (this.matchContext_.matches.length > 0) {
+          // ラップ中
+          return new SubStateWrapped({
+            ...this.matchContext_,
+            currentMatchIndex: 0,
+          });
         } else {
-          // 見つからない
-          return new SubStateReachedEnd(matchContext);
+          // 移動先がないのでこのまま
+          return undefined;
         }
       }
+      case "isearchBackward": {
+        // ファイル末尾に戻る
+        if (this.matchContext_.matches.length > 0) {
+          // ラップ中
+          return new SubStateWrappedBackward({
+            ...this.matchContext_,
+            currentMatchIndex: this.matchContext_.matches.length - 1,
+          });
+        } else {
+          // 移動先がないのでこのまま
+          return undefined;
+        }
+      }
+      case "queryChanged":
+        // クエリ変更
+        return onQueryChangedBackward(
+          this.matchContext_.searchContext,
+          event.query
+        );
+
       default:
         break;
     }
@@ -720,6 +876,7 @@ class SubStateWrapped implements State {
     console.debug("SubStateWrapped: enter()");
     // input box 調整
     const ib = this.matchContext_.searchContext.context.inputBox;
+    ib.title = "ISearch migemo";
     ib.step = this.matchContext_.currentMatchIndex + 1;
     ib.totalSteps = this.matchContext_.matches.length;
 
@@ -727,7 +884,7 @@ class SubStateWrapped implements State {
       this.matchContext_.currentMatchIndex <
       this.matchContext_.initialMatchIndex
     ) {
-      // 先頭から検索中
+      // ファイル先頭から前方検索中
       ib.validationMessage = {
         message: "Wrapped",
         severity: vscode.InputBoxValidationSeverity.Info,
@@ -747,7 +904,7 @@ class SubStateWrapped implements State {
       this.matchContext_.currentMatchIndex
     );
 
-    // マッチしている後ろにカーソル移動
+    // マッチしている文字列終端にカーソル移動
     moveCursor(
       this.matchContext_.searchContext.editor,
       this.matchContext_.matches[this.matchContext_.currentMatchIndex].end
@@ -766,54 +923,198 @@ class SubStateWrapped implements State {
           this.matchContext_.currentMatchIndex + 1 <
           this.matchContext_.matches.length
         ) {
-          // 次あり
+          // 前方あり
           return new SubStateWrapped({
             ...this.matchContext_,
             currentMatchIndex: this.matchContext_.currentMatchIndex + 1,
           });
         } else {
-          // 次無し
+          // 前方無し
           return new SubStateReachedEnd(this.matchContext_);
         }
       }
 
-      case "isearchBackward": {
-        // TODO
-        throw new Error('Not implemented yet: "isearchBackward" case');
-      }
+      case "isearchBackward":
+        // その場で後方検索に反転
+        return new SubStateWrappedBackward(this.matchContext_);
 
-      case "queryChanged": {
-        const queryStr = event.query;
-        if (queryStr === "") {
-          return new SubStateEmpty(this.matchContext_.searchContext);
-        }
-
-        // 検索
-        const [matches, idx] = search(
-          this.matchContext_.searchContext.context.migemo,
-          this.matchContext_.searchContext.editor,
-          queryStr,
-          this.matchContext_.searchContext.initialSelection // TODO DELで過去のマッチ位置に戻る対応。これだと単に最初から探すだけ。
+      case "queryChanged":
+        // クエリ変更
+        return onQueryChangedForward(
+          this.matchContext_.searchContext,
+          event.query
         );
 
-        const matchContext: MatchContext = {
-          searchContext: this.matchContext_.searchContext,
-          matches,
-          initialMatchIndex: idx,
-          currentMatchIndex: idx,
-        };
-
-        if (idx !== -1) {
-          // 見つかった
-          return new SubStateSearching(matchContext);
-        } else {
-          // 見つからない
-          return new SubStateReachedEnd(matchContext);
-        }
-      }
       default:
         break;
     }
     return undefined;
   }
 }
+
+/** 後方検索中・先頭到達後ラップアラウンド中状態
+ *
+ */
+class SubStateWrappedBackward implements State {
+  private matchContext_: MatchContext;
+
+  constructor(matchContext: MatchContext) {
+    this.matchContext_ = matchContext;
+  }
+  enter(): void {
+    console.debug("SubStateWrappedBackward: enter()");
+    // input box 調整
+    const ib = this.matchContext_.searchContext.context.inputBox;
+    ib.title = "ISearch migemo Backward";
+    ib.step = this.matchContext_.currentMatchIndex + 1;
+    ib.totalSteps = this.matchContext_.matches.length;
+
+    if (
+      this.matchContext_.currentMatchIndex <
+      this.matchContext_.initialMatchIndex
+    ) {
+      // 先頭から検索中
+      ib.validationMessage = {
+        message: "Wrapped Backward",
+        severity: vscode.InputBoxValidationSeverity.Info,
+      };
+    } else {
+      // 一周過ぎた
+      ib.validationMessage = {
+        message: "Overwrapped Backward",
+        severity: vscode.InputBoxValidationSeverity.Info,
+      };
+    }
+
+    // 装飾適用
+    updateDecoration(
+      this.matchContext_.searchContext.editor,
+      this.matchContext_.matches,
+      this.matchContext_.currentMatchIndex
+    );
+
+    // マッチしている文字列先頭にカーソル移動
+    moveCursor(
+      this.matchContext_.searchContext.editor,
+      this.matchContext_.matches[this.matchContext_.currentMatchIndex].start
+    );
+  }
+  exit(): void {
+    console.debug("SubStateWrappedBackward: exit()");
+    // nop
+  }
+
+  transition(event: Event): State | undefined {
+    console.debug("SubStateWrappedBackward: transaction(): Event: ", event);
+    switch (event.kind) {
+      case "isearchForward":
+        // その場で前方検索に反転
+        return new SubStateWrapped(this.matchContext_);
+
+      case "isearchBackward": {
+        if (this.matchContext_.currentMatchIndex > 0) {
+          // 後方あり
+          return new SubStateWrappedBackward({
+            ...this.matchContext_,
+            currentMatchIndex: this.matchContext_.currentMatchIndex - 1,
+          });
+        } else {
+          // 後方無し
+          return new SubStateReachedEndBackward(this.matchContext_);
+        }
+      }
+
+      case "queryChanged":
+        // クエリ変更
+        return onQueryChangedBackward(
+          this.matchContext_.searchContext,
+          event.query
+        );
+
+      default:
+        break;
+    }
+    return undefined;
+  }
+}
+
+/** 前方検索中にクエリ文字列が変更された場合の処理
+ *
+ * @param searchContext
+ * @param queryStr
+ * @returns 遷移先状態
+ */
+const onQueryChangedForward = (
+  searchContext: SearchContext,
+  queryStr: string
+): State => {
+  {
+    if (queryStr === "") {
+      return new SubStateEmpty(searchContext);
+    }
+
+    // 検索
+    const [matches, idx] = search(
+      searchContext.context.migemo,
+      searchContext.editor,
+      queryStr,
+      searchContext.initialSelection // TODO DELで過去のマッチ位置に戻る対応。これだと単に最初から探すだけ。
+    );
+
+    const matchContext: MatchContext = {
+      searchContext,
+      matches,
+      initialMatchIndex: idx,
+      currentMatchIndex: idx,
+    };
+
+    if (idx !== -1) {
+      // 見つかった
+      return new SubStateSearching(matchContext);
+    } else {
+      // 見つからない
+      return new SubStateReachedEnd(matchContext);
+    }
+  }
+};
+
+/** 後方検索中にクエリ文字列が変更された場合の処理
+ *
+ * @param searchContext
+ * @param queryStr
+ * @returns 遷移先状態
+ */
+const onQueryChangedBackward = (
+  searchContext: SearchContext,
+  queryStr: string
+): State => {
+  if (queryStr === "") {
+    return new SubStateEmptyBackward(searchContext);
+  }
+
+  // 検索
+  const [matches, idx] = search(
+    searchContext.context.migemo,
+    searchContext.editor,
+    queryStr,
+    searchContext.initialSelection // TODO DELで過去のマッチ位置に戻る対応。これだと単に最初から探すだけ。
+  );
+
+  // 後方検索なので、前方検索で見つかったものの一つ手前が該当
+  const i = idx > 0 ? idx - 1 : -1;
+
+  const matchContext: MatchContext = {
+    searchContext,
+    matches,
+    initialMatchIndex: i,
+    currentMatchIndex: i,
+  };
+
+  if (i !== -1) {
+    // 見つかった
+    return new SubStateSearchingBackward(matchContext);
+  } else {
+    // 見つからない
+    return new SubStateReachedEndBackward(matchContext);
+  }
+};
