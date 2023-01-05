@@ -1100,8 +1100,22 @@ const onQueryChangedBackward = (
     searchContext.initialSelection // TODO DELで過去のマッチ位置に戻る対応。これだと単に最初から探すだけ。
   );
 
-  // 後方検索なので、前方検索で見つかったものの一つ手前が該当
-  const i = idx > 0 ? idx - 1 : -1;
+  let i = -1;
+
+  if (idx === -1) {
+    if (matches.length > 0) {
+      // マッチ範囲はあったものの、前方検索で見つからなかった -> 最後のマッチ
+      i = matches.length - 1;
+    } else {
+      // 一つもマッチ範囲がない === -1
+    }
+  } else if (idx === 0) {
+    // 一番先頭範囲で前方マッチ === 後方マッチしていない === -1
+    // nop
+  } else {
+    // 途中で前方マッチ -> 後方検索なら、その一つ手前
+    i = idx - 1;
+  }
 
   const matchContext: MatchContext = {
     searchContext,
