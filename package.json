@@ -2,7 +2,7 @@
   "name": "migemo-isearch",
   "displayName": "migemo-isearch",
   "description": "Incremental search with migemo.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "publisher": "sumomoneko",
   "engines": {
     "vscode": "^1.73.0"
