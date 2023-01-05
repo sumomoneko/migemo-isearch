@@ -1,71 +1,78 @@
-# migemo-isearch README
+# migemo-isearch
 
-This is the README for your extension "migemo-isearch". After writing up a brief description, we recommend including the following sections.
+[jsmigemo](https://github.com/oguna/jsmigemo)を利用し、ローマ字のまま日本語をインクリメンタル検索するための機能拡張です。
 
-## Features
+![migemo icon](https://raw.githubusercontent.com/sumomoneko/migemo-isearch/main/doc/searching.gif)
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+## そもそも migemo とは？
 
-For example if there is an image subfolder under your extension project workspace:
+詳しくはオリジナル実装の高林哲さんによる解説、「[Migemo: ローマ字のまま日本語をインクリメンタル検索](http://0xcc.net/migemo/)」を参照ください。
 
-\!\[feature X\]\(images/feature-x.png\)
+## 設定方法
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+デフォルトでは、以下に示すように、emacs に合わせたキーボードバインディングとしています:
 
-## Requirements
+| コマンド                          | 説明                           | デフォルトバインド |
+| --------------------------------- | ------------------------------ | ------------------ |
+| `migemo-isearch.isearch-forward`  | 前方インクリメンタルサーチ開始 | ctrl+s             |
+| `migemo-isearch.isearch-backward` | 後方インクリメンタルサーチ開始 | ctrl+r             |
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+なお、例えば[Awesome Emacs Keymap](https://marketplace.visualstudio.com/items?itemName=tuttieee.emacs-mcx)を利用している場合、検索コマンドの競合を避けるために`keybindings.json`に以下を追加し、Awesome Emacs Keymap の設定を無効化する必要があります。
 
-## Extension Settings
+```json
+{
+    "key": "ctrl+s",
+    "command": "-emacs-mcx.isearchForward",
+    "when": "!findInputFocussed"
+},
+{
+    "key": "ctrl+r",
+    "command": "-emacs-mcx.isearchBackward",
+    "when": "!findInputFocussed"
+}
+```
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+インクリメンタルサーチを開始し input box が表示されている状態では、`migemo-isearch.inIsearchMode`という[context](https://code.visualstudio.com/api/references/when-clause-contexts)が有効になっています。
 
-For example:
+この context はキーバインド設定の`when`句に利用することができ、デフォルトで以下のキーがバインドされています。
 
-This extension contributes the following settings:
+| コマンド                          | 説明       | デフォルトバインド |
+| --------------------------------- | ---------- | ------------------ |
+| `migemo-isearch.isearch-forward`  | 前方次検索 | ctrl+s             |
+| `migemo-isearch.isearch-backward` | 後方次検索 | ctrl+r             |
+| `migemo-isearch.cancel`           | 検索中断   | ctrl+g             |
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+## ToDo
 
-## Known Issues
+現在の所、基本的なインクリメンタルサーチしか対応していません。今後予定しているのは以下の通りです:
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- サーチリング(search ring)対応
+- DEL 時の戻り方変更( s.a. [key bindings - How to make DEL in isearch always delete character? - Emacs Stack Exchange](https://emacs.stackexchange.com/questions/34069/how-to-make-del-in-isearch-always-delete-character))
+- 文字列が見つからなかった場合の `ctrl-g`の挙動
+- isearch-yank-kill などの挙動
+- [ace-jump-mode](http://emacs.rubikitch.com/ace-isearch/)との統合
 
-## Release Notes
+## 参考
 
-Users appreciate release notes as you update your extension.
+- [GNU Emacs Manual(Japanese Translation): Incremental Search](https://ayatakesi.github.io/emacs/24.5/Incremental-Search.html#Incremental-Search)
+- [VSCode のキーバインド拡張を作ったので、その勘所を紹介 - Qiita](https://qiita.com/whitphx/items/af8baa19fc4280ac1c0a)
 
-### 1.0.0
+## 謝辞およびライセンス
 
-Initial release of ...
+migemo のオリジナル実装は、高林哲さんによる [Migemo: ローマ字のまま日本語をインクリメンタル検索](http://0xcc.net/migemo/)です。
 
-### 1.0.1
+本機能拡張は、oguna さんによる javascript の migemo 実装、[oguna/jsmigemo](https://github.com/oguna/jsmigemo)を利用しています。
+また辞書として、3 条項 BSD ライセンスに基づいた[oguna/yet-another-migemo-dict](https://github.com/oguna/yet-another-migemo-dict)を利用しています。  
+これら oguna さんの実装は、[辞書構造を工夫した Migemo 実装の紹介 - Qiita](https://qiita.com/oguna/items/c70e8c409b663d74113e)で詳しく説明されています。
 
-Fixed issue #.
+### アイコンについて
 
-### 1.1.0
+![migemo icon](https://raw.githubusercontent.com/sumomoneko/migemo-isearch/main/images/migemo.png)
 
-Added features X, Y, and Z.
+機能拡張のアイコンは、[名前の由来](http://0xcc.net/unimag/2/#label-23)に基づきちょんまげ(?)の生えたポケモンを
+[text-to-pokemon](https://replicate.com/lambdal/text-to-pokemon)で生成、利用しています。  
+その学習データには[pokemon-blip-captions](https://huggingface.co/datasets/lambdalabs/pokemon-blip-captions)が使われており、
+ライセンスは[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ja)とのことです。
 
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+しかし 2023 年現在、AI が生成した画像の著作権についてはまだ曖昧な点があると理解しています。
+以上を踏まえ、このアイコンについて私 sumomoneko は一切の権利主張を行いません。

@@ -12,7 +12,9 @@
         "esbuild",
         "isearch",
         "jsmigemo",
+        "Keymap",
         "migemo",
+        "oguna",
         "Overwrapped",
         "sumomoneko"
     ]
