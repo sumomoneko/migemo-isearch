@@ -17,8 +17,15 @@
         "@typescript-eslint/naming-convention": "warn",
         "@typescript-eslint/semi": "warn",
         "@typescript-eslint/switch-exhaustiveness-check": "warn",
+        "@typescript-eslint/strict-boolean-expressions": "warn",
         "curly": "warn",
-        "eqeqeq": "warn",
+        "eqeqeq": [
+            "warn",
+            "always",
+            {
+                "null": "ignore"
+            }
+        ],
         "no-throw-literal": "warn",
         "semi": "off"
     },
