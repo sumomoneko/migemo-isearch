@@ -30,6 +30,16 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "Migemo Isearch configuration",
+      "properties": {
+        "migemo-isearch.useMetaPrefixMacCmd": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, Command (⌘) key works as the Meta prefix (macOS only)."
+        }
+      }
+    },
     "commands": [
       {
         "command": "migemo-isearch.isearch-forward",
@@ -65,6 +75,28 @@
         "key": "ctrl+r",
         "command": "migemo-isearch.isearch-backward",
         "when": "migemo-isearch.inIsearchMode"
+      },
+      {
+        "key": "alt+p",
+        "command": "migemo-isearch.isearch-ring-retreat",
+        "when": "migemo-isearch.inIsearchMode && !config.migemo-isearch.useMetaPrefixMacCmd"
+      },
+      {
+        "key": "alt+p",
+        "mac": "cmd+p",
+        "command": "migemo-isearch.isearch-ring-retreat",
+        "when": "migemo-isearch.inIsearchMode && config.migemo-isearch.useMetaPrefixMacCmd"
+      },
+      {
+        "key": "alt+n",
+        "command": "migemo-isearch.isearch-ring-advance",
+        "when": "migemo-isearch.inIsearchMode && !config.migemo-isearch.useMetaPrefixMacCmd"
+      },
+      {
+        "key": "alt+n",
+        "mac": "cmd+n",
+        "command": "migemo-isearch.isearch-ring-advance",
+        "when": "migemo-isearch.inIsearchMode && config.migemo-isearch.useMetaPrefixMacCmd"
       }
     ]
   },

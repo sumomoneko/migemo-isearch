@@ -36,17 +36,37 @@
 
 この context はキーバインド設定の`when`句に利用することができ、デフォルトで以下のキーがバインドされています。
 
-| コマンド                          | 説明       | デフォルトバインド |
-| --------------------------------- | ---------- | ------------------ |
-| `migemo-isearch.isearch-forward`  | 前方次検索 | ctrl+s             |
-| `migemo-isearch.isearch-backward` | 後方次検索 | ctrl+r             |
-| `migemo-isearch.cancel`           | 検索中断   | ctrl+g             |
+| コマンド                              | 説明             | デフォルトバインド |
+| ------------------------------------- | ---------------- | ------------------ |
+| `migemo-isearch.isearch-forward`      | 前方次検索       | ctrl+s             |
+| `migemo-isearch.isearch-backward`     | 後方次検索       | ctrl+r             |
+| `migemo-isearch.cancel`               | 検索中断         | ctrl+g             |
+| `migemo-isearch.isearch-ring-retreat` | 検索履歴を遡る   | alt+p              |
+| `migemo-isearch.isearch-ring-forward` | 検索履歴を進める | alt+n              |
+
+## 設定項目
+
+### `migemo-isearch.useMetaPrefixMacCmd`
+
+true を設定した場合、オプション(⌥)キーの代わりにコマンド(⌘)キーを利用します。この設定は macOS のみ有効です。
+(c.f. [emacs-mcx.useMetaPrefixMacCmd](https://github.com/whitphx/vscode-emacs-mcx#emacs-mcxusemetaprefixescape))
+
+## 使い方
+
+ctrl+s で、ファイル終端(前方)に向けたインクリメンタル検索を開始します(isearch-forward)。
+ctrl-r で、ファイル先頭(後方)に向けたのインクリメンタル検索を開始します(isearch-backward)。
+
+検索文字列が無い状態でもう一度 ctrl+s(または ctrl+r)をタイプすると、最後に検索した文字列の再検索を行います。
+
+以前に検索した文字列を再利用するには、サーチリング(search ring)を使います。
+コマンド alt+p (isearch-ring-retreat)または alt+n (isearch-ring-advance)で、リングを移動して再使用したい文字列を取り出します。
+
+サーチリングの中に保存されている、最近使用された検索文字列の数は、現在のところ固定で 16 です。
 
 ## ToDo
 
 現在の所、基本的なインクリメンタルサーチしか対応していません。今後予定しているのは以下の通りです:
 
-- サーチリング(search ring)対応
 - DEL 時の戻り方変更( s.a. [key bindings - How to make DEL in isearch always delete character? - Emacs Stack Exchange](https://emacs.stackexchange.com/questions/34069/how-to-make-del-in-isearch-always-delete-character))
 - 文字列が見つからなかった場合の `ctrl-g`の挙動
 - isearch-yank-kill などの挙動

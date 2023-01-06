@@ -47,6 +47,12 @@ export function activate(context: vscode.ExtensionContext) {
   registerCommand("migemo-isearch.cancel", () =>
     isearch.transaction({ kind: "cancel" })
   );
+  registerCommand("migemo-isearch.isearch-ring-retreat", () =>
+    isearch.transaction({ kind: "isearchRingRetreat" })
+  );
+  registerCommand("migemo-isearch.isearch-ring-advance", () =>
+    isearch.transaction({ kind: "isearchRingAdvance" })
+  );
 
   /*
   context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(
@@ -88,7 +94,7 @@ class Isearch {
     this.state_ = new StateInit({
       migemo,
       inputBox: this.inputBox_,
-      searchRing: [],
+      searchRing: new SearchRing(),
     });
     this.state_.enter();
   }
@@ -114,6 +120,8 @@ interface Events {
   queryChanged: { query: string };
   inputBoxAccepted: Record<string, unknown>;
   inputBoxHided: Record<string, unknown>;
+  isearchRingRetreat: Record<string, unknown>;
+  isearchRingAdvance: Record<string, unknown>;
   // quit: Record<string, unknown>;
 }
 
@@ -269,7 +277,7 @@ interface Context {
   /// isearch input box
   inputBox: vscode.InputBox;
   /// search history
-  searchRing: string[];
+  searchRing: SearchRing;
 }
 
 /** StateSearching 検索中状態に渡って共有される変数
@@ -284,6 +292,9 @@ interface SearchContext {
   initialSelection: vscode.Selection;
   /// 検索コンテキストを保持
   inIsearchMode: ContextKey;
+
+  /// 検索履歴呼び出しイテレータ
+  ringIter: RingIter;
 }
 
 /** 検索文字列に関して共有される文字列
@@ -335,6 +346,7 @@ class StateInit implements State {
           editor,
           initialSelection: editor.selection,
           inIsearchMode: new ContextKey("migemo-isearch.inIsearchMode"),
+          ringIter: this.context_.searchRing.iter(),
         };
         return new StateSearching(searchContext, true);
       }
@@ -345,6 +357,7 @@ class StateInit implements State {
           editor,
           initialSelection: editor.selection,
           inIsearchMode: new ContextKey("migemo-isearch.inIsearchMode"),
+          ringIter: this.context_.searchRing.iter(),
         };
         return new StateSearching(searchContext, false);
       }
@@ -425,8 +438,55 @@ class StateSearching implements State {
 
     let nextState: State | undefined = undefined;
     switch (event.kind) {
+      case "isearchRingRetreat": {
+        // M-p
+        const queryStr = this.searchContext_.ringIter.getRetreat();
+        if (queryStr == null) {
+          // サーチリング先頭まで到達
+          this.searchContext_.context.inputBox.validationMessage = {
+            message: "Beginning of history",
+            severity: vscode.InputBoxValidationSeverity.Info,
+          };
+        } else {
+          // サーチリングの文字列を設定されたとして状態遷移
+          this.searchContext_.context.inputBox.value = queryStr;
+          const l = queryStr.length;
+          this.searchContext_.context.inputBox.valueSelection = [l, l];
+          nextState = this.transition({
+            kind: "queryChanged",
+            query: queryStr,
+          });
+        }
+        break;
+      }
+
+      case "isearchRingAdvance": {
+        // M-n
+        const queryStr = this.searchContext_.ringIter.getAdvance();
+        if (queryStr == null) {
+          // サーチリング末尾まで到達
+          this.searchContext_.context.inputBox.validationMessage = {
+            message: "End of history",
+            severity: vscode.InputBoxValidationSeverity.Info,
+          };
+        } else {
+          // サーチリングの文字列を設定されたとして状態遷移
+          this.searchContext_.context.inputBox.value = queryStr;
+          const l = queryStr.length;
+          this.searchContext_.context.inputBox.valueSelection = [l, l];
+          nextState = this.transition({
+            kind: "queryChanged",
+            query: queryStr,
+          });
+        }
+        break;
+      }
+
       case "inputBoxAccepted":
         // 検索確定
+        this.searchContext_.context.searchRing.add(
+          this.searchContext_.context.inputBox.value
+        );
         nextState = new StateInit(this.searchContext_.context);
         break;
 
@@ -486,15 +546,23 @@ class SubStateEmpty implements State {
     console.debug("SubStateEmpty: transition()", event);
 
     switch (event.kind) {
-      case "isearchForward":
-        // TODO 検索ringからもってくる
-        console.info("Not implemented yet");
+      case "isearchForward": {
+        // サーチリングから最新のクエリを取りだし、クエリ変更処理
+        const queryStr = this.searchContext_.ringIter.newest();
+        if (queryStr != null) {
+          this.searchContext_.context.inputBox.value = queryStr;
+          return onQueryChangedForward(this.searchContext_, queryStr);
+        } else {
+          this.searchContext_.context.inputBox.validationMessage = {
+            message: "No previous search string",
+            severity: vscode.InputBoxValidationSeverity.Info,
+          };
+        }
         break;
-
+      }
       case "isearchBackward":
-        // TODO 検索ringからもってくる
-        console.info("Not implemented yet");
-        break;
+        // 後方検索に変更
+        return new SubStateEmptyBackward(this.searchContext_);
 
       case "queryChanged":
         // クエリ変更
@@ -546,14 +614,23 @@ class SubStateEmptyBackward implements State {
 
     switch (event.kind) {
       case "isearchForward":
-        // TODO 検索ringからもってくる
-        console.info("Not implemented yet");
-        break;
+        // 前方検索に変更
+        return new SubStateEmpty(this.searchContext_);
 
-      case "isearchBackward":
-        // TODO 検索ringからもってくる
-        console.info("Not implemented yet");
+      case "isearchBackward": {
+        // サーチリングから最新のクエリを取りだし、クエリ変更処理
+        const queryStr = this.searchContext_.ringIter.newest();
+        if (queryStr != null) {
+          this.searchContext_.context.inputBox.value = queryStr;
+          return onQueryChangedBackward(this.searchContext_, queryStr);
+        } else {
+          this.searchContext_.context.inputBox.validationMessage = {
+            message: "No previous search string",
+            severity: vscode.InputBoxValidationSeverity.Info,
+          };
+        }
         break;
+      }
 
       case "queryChanged":
         // クエリ変更
@@ -1132,3 +1209,86 @@ const onQueryChangedBackward = (
     return new SubStateReachedEndBackward(matchContext);
   }
 };
+
+class SearchRing {
+  // 最新: 0; 最古: length-1
+  private ring_: string[] = [];
+  private searchRingMax_ = 16;
+
+  constructor(searchRingMax?: number) {
+    if (searchRingMax != null) {
+      this.searchRingMax_ = searchRingMax;
+    }
+  }
+
+  public add(query: string): void {
+    // 先頭(最新)に追加
+    this.ring_.unshift(query);
+
+    // 重複があれば後ろの方(古い方)を削除
+    this.ring_ = Array.from(new Set(this.ring_));
+
+    if (this.ring_.length > this.searchRingMax_) {
+      // 長すぎる場合、末尾(最古)を削除
+      this.ring_.pop();
+    }
+  }
+
+  public iter(): RingIter {
+    return new RingIter(this.ring_);
+  }
+}
+
+class RingIter {
+  // 最新: 0; 最古: length-1
+  private readonly data_: string[];
+
+  private idx_: number | undefined;
+
+  constructor(data: string[]) {
+    this.data_ = data;
+  }
+
+  public newest(): string | undefined {
+    if (this.data_.length === 0) {
+      return undefined;
+    }
+    return this.data_[0];
+  }
+
+  // 新 -> 旧 M-p isearch-ring-retreat
+  public getRetreat(): string | undefined {
+    if (this.data_.length === 0) {
+      return undefined;
+    }
+    if (this.idx_ == null) {
+      // 初回なら最新を返すようにする
+      this.idx_ = -1;
+    }
+
+    if (this.idx_ + 1 >= this.data_.length) {
+      return undefined;
+    }
+    this.idx_ += 1;
+    return this.data_[this.idx_];
+  }
+
+  // 旧 -> 新 M-n isearch-ring-advance
+  public getAdvance(): string | undefined {
+    if (this.data_.length === 0) {
+      return undefined;
+    }
+
+    if (this.idx_ == null) {
+      // 初回なら最古を返すようにする
+      this.idx_ = this.data_.length;
+    }
+
+    if (this.idx_ <= 0) {
+      return undefined;
+    }
+
+    this.idx_ -= 1;
+    return this.data_[this.idx_];
+  }
+}
