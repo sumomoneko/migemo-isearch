@@ -1047,18 +1047,18 @@ class SubStateWrappedBackward implements State {
     ib.totalSteps = this.matchContext_.matches.length;
 
     if (
-      this.matchContext_.currentMatchIndex <
+      this.matchContext_.currentMatchIndex <=
       this.matchContext_.initialMatchIndex
     ) {
       // 先頭から検索中
       ib.validationMessage = {
-        message: "Wrapped Backward",
+        message: "Overwrapped Backward",
         severity: vscode.InputBoxValidationSeverity.Info,
       };
     } else {
       // 一周過ぎた
       ib.validationMessage = {
-        message: "Overwrapped Backward",
+        message: "Wrapped Backward",
         severity: vscode.InputBoxValidationSeverity.Info,
       };
     }
