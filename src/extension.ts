@@ -945,6 +945,22 @@ class SubStateReachedEnd implements State {
           event.query
         );
 
+      case "cancel":
+        // ^G
+        if (this.matchContext_.matches.length === 0) {
+          const state = this.matchContext_.searchContext.matchHistory.pop();
+          if (state != null) {
+            // 現在マッチしていなくて、過去にマッチしていて、^Gおされた
+            // -> 直近にマッチしていた状態に戻す
+            const ib = this.matchContext_.searchContext.context.inputBox;
+            ib.value = state.queryStr;
+            const l = state.queryStr.length;
+            ib.valueSelection = [l, l];
+            return state;
+          }
+        }
+        break;
+
       default:
         break;
     }
@@ -1019,6 +1035,22 @@ class SubStateReachedEndBackward implements State {
           this.matchContext_.searchContext,
           event.query
         );
+
+      case "cancel":
+        // ^G
+        if (this.matchContext_.matches.length === 0) {
+          const state = this.matchContext_.searchContext.matchHistory.pop();
+          if (state != null) {
+            // 現在マッチしていなくて、過去にマッチしていて、^Gおされた
+            // -> 直近にマッチしていた状態に戻す
+            const ib = this.matchContext_.searchContext.context.inputBox;
+            ib.value = state.queryStr;
+            const l = state.queryStr.length;
+            ib.valueSelection = [l, l];
+            return state;
+          }
+        }
+        break;
 
       default:
         break;
