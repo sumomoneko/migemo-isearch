@@ -207,6 +207,13 @@ const moveCursor = (
   );
 };
 
+type CaseMode = "ignoreCase" | "caseSensitive" | "searchUpperCase";
+
+const hasCapitalLetter = (str: string): boolean => {
+  const re = new RegExp("[A-Z]", "g");
+  return re.test(str);
+};
+
 /** 検索する
  *
  * @param migemo
@@ -217,13 +224,34 @@ const moveCursor = (
  */
 const search = (
   migemo: jsmigemo.Migemo,
+  caseMode: CaseMode,
   editor: vscode.TextEditor,
   queryStr: string,
   cursor: vscode.Selection
 ): [vscode.Range[], number] => {
   const doc = editor.document;
   const text = doc.getText();
-  const regex = new RegExp(migemo.query(queryStr), "g");
+
+  let flags = "g";
+
+  switch (caseMode) {
+    case "searchUpperCase":
+      if (!hasCapitalLetter(queryStr)) {
+        // 大文字が含まれていない == 大文字小文字の違いを意識しない
+        flags += "i";
+      }
+      break;
+
+    case "ignoreCase":
+      flags += "i";
+      break;
+
+    case "caseSensitive":
+      break;
+  }
+
+  console.debug(migemo.query(queryStr));
+  const regex = new RegExp(migemo.query(queryStr), flags);
   let match;
   const matches: vscode.Range[] = [];
   while ((match = regex.exec(text))) {
@@ -1280,6 +1308,7 @@ const onQueryChangedForward = (
     // 検索
     const [matches, idx] = search(
       searchContext.context.migemo,
+      "searchUpperCase",
       searchContext.editor,
       queryStr,
       searchContext.initialSelection
@@ -1320,6 +1349,7 @@ const onQueryChangedBackward = (
   // 検索
   const [matches, idx] = search(
     searchContext.context.migemo,
+    "searchUpperCase",
     searchContext.editor,
     queryStr,
     searchContext.initialSelection
