@@ -547,12 +547,17 @@ class StateSearching implements State {
         break;
 
       case "cancel":
-      case "inputBoxHided":
         // 検索取り消し。カーソル位置を復元する
         moveCursor(
           this.searchContext_.editor,
           this.searchContext_.initialSelection
         );
+        nextState = new StateInit(this.searchContext_.context);
+        break;
+
+      case "inputBoxHided":
+        // なんらかの都合(マウスクリックなど)でinput boxが消えた。
+        // -> カーソル位置は保全したまま検索終了
         nextState = new StateInit(this.searchContext_.context);
         break;
 
