@@ -29,6 +29,16 @@
     "key": "ctrl+r",
     "command": "-emacs-mcx.isearchBackward",
     "when": "!findInputFocussed"
+},
+{
+    "key": "ctrl+g",
+    "command": "-workbench.action.closeQuickOpen",
+    "when": "inQuickOpen"
+},
+{
+    "key": "ctrl+g",
+    "command": "workbench.action.closeQuickOpen",
+    "when": "inQuickOpen && !migemo-isearch.inIsearchMode"
 }
 ```
 
@@ -58,18 +68,32 @@ ctrl-r で、ファイル先頭(後方)に向けたのインクリメンタル�
 
 検索文字列が無い状態でもう一度 ctrl+s(または ctrl+r)をタイプすると、最後に検索した文字列の再検索を行います。
 
+文字列の検索に成功している状態で、ctrl+s(または ctrl+r)をタイプすると、次(前)のマッチ位置にジャンプしていきます。
+この操作は何度でも繰り返すことで、次々にジャンプしていくことが出来ます。`backspace`をタイプすると、ジャンプを 1 回取り消します。
+
 以前に検索した文字列を再利用するには、サーチリング(search ring)を使います。
 コマンド alt+p (isearch-ring-retreat)または alt+n (isearch-ring-advance)で、リングを移動して再使用したい文字列を取り出します。
 
-サーチリングの中に保存されている、最近使用された検索文字列の数は、現在のところ固定で 16 です。
+サーチリングの中に保存されている最近使用された検索文字列の数は、現在のところ固定で 16 です。
+
+検索文字列は大文字小文字を区別しません。ただし、検索文字列に大文字が含まれていると、大文字・小文字を区別するようになります。
+
+なお migemo で熟語・複合語を検索する場合、例えば"漢字入力"をマッチしたい場合、"kanjiNyuuryoku"というように区切りを大文字にします。
+このときアルファベットの大文字小文字が区別されるようになりますが、実用上問題ないかと思います。
+
+検索中断のコマンド `migemo-isearch.cancel` の動作は、多少複雑です:
+
+1. 文字列の検索に成功している状態で`migemo-isearch.cancel`をタイプすると、検索全体が取り消され、カーソルが検索開始した位置に戻ります。
+2. 検索に成功していた後に続いて失敗した文字が含まれている状態で`migemo-isearch.cancel`をタイプすると、検索に失敗した文字列が取り除かれ、
+   最後に成功した位置に戻ります。  
+   この状態で 2 回目の`migemo-isearch.cancel`をタイプすると、1.の処理となって検索全体が取り消されます。
 
 ## ToDo
 
 現在の所、基本的なインクリメンタルサーチしか対応していません。今後予定しているのは以下の通りです:
 
-- DEL 時の戻り方変更( s.a. [key bindings - How to make DEL in isearch always delete character? - Emacs Stack Exchange](https://emacs.stackexchange.com/questions/34069/how-to-make-del-in-isearch-always-delete-character))
-- 文字列が見つからなかった場合の `ctrl-g`の挙動
 - isearch-yank-kill などの挙動
+- 大文字小文字の処理切り替えなど
 - [ace-jump-mode](http://emacs.rubikitch.com/ace-isearch/)との統合
 
 ## 参考
