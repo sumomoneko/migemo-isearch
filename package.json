@@ -77,6 +77,12 @@
         "when": "migemo-isearch.inIsearchMode"
       },
       {
+        "key": "backspace",
+        "command": "migemo-isearch.del",
+        "when": "migemo-isearch.inIsearchMode"
+      },
+
+      {
         "key": "alt+p",
         "command": "migemo-isearch.isearch-ring-retreat",
         "when": "migemo-isearch.inIsearchMode && !config.migemo-isearch.useMetaPrefixMacCmd"

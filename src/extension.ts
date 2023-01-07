@@ -47,6 +47,9 @@ export function activate(context: vscode.ExtensionContext) {
   registerCommand("migemo-isearch.cancel", () =>
     isearch.transaction({ kind: "cancel" })
   );
+  registerCommand("migemo-isearch.del", () =>
+    isearch.transaction({ kind: "del" })
+  );
   registerCommand("migemo-isearch.isearch-ring-retreat", () =>
     isearch.transaction({ kind: "isearchRingRetreat" })
   );
@@ -117,6 +120,7 @@ interface Events {
   isearchForward: Record<string, unknown>;
   isearchBackward: Record<string, unknown>;
   cancel: Record<string, unknown>;
+  del: Record<string, unknown>;
   queryChanged: { query: string };
   inputBoxAccepted: Record<string, unknown>;
   inputBoxHided: Record<string, unknown>;
@@ -131,6 +135,13 @@ interface State {
   enter(): void;
   exit(): void;
   transition(event: Event): State | undefined;
+}
+
+/** 検索のマッチ履歴になり得る状態
+ *
+ */
+interface HistoryableState extends State {
+  queryStr: string;
 }
 
 /** マッチ文字列を装飾・装飾解除する
@@ -295,6 +306,9 @@ interface SearchContext {
 
   /// 検索履歴呼び出しイテレータ
   ringIter: RingIter;
+
+  /// マッチ履歴。DELでマッチ位置を遡る
+  matchHistory: HistoryableState[];
 }
 
 /** 検索文字列に関して共有される文字列
@@ -303,6 +317,7 @@ interface SearchContext {
 interface MatchContext {
   searchContext: SearchContext;
 
+  queryStr: string;
   /// 検索結果
   matches: vscode.Range[];
   /// 初回マッチ位置(ラップアラウンド判定用)
@@ -347,6 +362,7 @@ class StateInit implements State {
           initialSelection: editor.selection,
           inIsearchMode: new ContextKey("migemo-isearch.inIsearchMode"),
           ringIter: this.context_.searchRing.iter(),
+          matchHistory: [],
         };
         return new StateSearching(searchContext, true);
       }
@@ -358,6 +374,7 @@ class StateInit implements State {
           initialSelection: editor.selection,
           inIsearchMode: new ContextKey("migemo-isearch.inIsearchMode"),
           ringIter: this.context_.searchRing.iter(),
+          matchHistory: [],
         };
         return new StateSearching(searchContext, false);
       }
@@ -425,14 +442,23 @@ class StateSearching implements State {
     this.searchContext_.inIsearchMode.set(false);
   }
 
-  transition(event: Event): State | undefined {
-    console.debug("StateSearching: transaction(): Event: ", event);
+  private internalTransition(event: Event): boolean {
+    console.debug("StateSearching: internalTransition(): Event: ", event);
     const internalNextState = this.subState_.transition(event);
     if (internalNextState) {
       // 内部での遷移で完結する
       this.subState_.exit();
       this.subState_ = internalNextState;
       this.subState_.enter();
+      return true;
+    }
+    return false;
+  }
+
+  transition(event: Event): State | undefined {
+    console.debug("StateSearching: transition(): Event: ", event);
+    if (this.internalTransition(event)) {
+      // 内部での遷移で完結する
       return undefined;
     }
 
@@ -448,11 +474,11 @@ class StateSearching implements State {
             severity: vscode.InputBoxValidationSeverity.Info,
           };
         } else {
-          // サーチリングの文字列を設定されたとして状態遷移
+          // サーチリングの文字列を設定されたとして内部状態遷移
           this.searchContext_.context.inputBox.value = queryStr;
           const l = queryStr.length;
           this.searchContext_.context.inputBox.valueSelection = [l, l];
-          nextState = this.transition({
+          this.internalTransition({
             kind: "queryChanged",
             query: queryStr,
           });
@@ -470,11 +496,41 @@ class StateSearching implements State {
             severity: vscode.InputBoxValidationSeverity.Info,
           };
         } else {
-          // サーチリングの文字列を設定されたとして状態遷移
+          // サーチリングの文字列を設定されたとして内部状態遷移
           this.searchContext_.context.inputBox.value = queryStr;
           const l = queryStr.length;
           this.searchContext_.context.inputBox.valueSelection = [l, l];
-          nextState = this.transition({
+          this.internalTransition({
+            kind: "queryChanged",
+            query: queryStr,
+          });
+        }
+        break;
+      }
+
+      case "del": {
+        console.debug(this.searchContext_.matchHistory);
+        // マッチした履歴があれば戻る
+        const state = this.searchContext_.matchHistory.pop();
+        if (state != null) {
+          // 内部での遷移で完結する
+          this.subState_.exit();
+          this.subState_ = state;
+
+          this.searchContext_.context.inputBox.value = state.queryStr;
+          const l = state.queryStr.length;
+          this.searchContext_.context.inputBox.valueSelection = [l, l];
+          this.subState_.enter();
+        } else {
+          // 履歴が無いので、クエリ文字列の末尾を削除し内部状態遷移
+          const queryStr = this.searchContext_.context.inputBox.value.slice(
+            0,
+            -1
+          );
+          this.searchContext_.context.inputBox.value = queryStr;
+          const l = queryStr.length;
+          this.searchContext_.context.inputBox.valueSelection = [l, l];
+          this.internalTransition({
             kind: "queryChanged",
             query: queryStr,
           });
@@ -646,11 +702,15 @@ class SubStateEmptyBackward implements State {
 /** 前方検索中・マッチ状態
  *
  */
-class SubStateSearching implements State {
-  private matchContext_: MatchContext;
+class SubStateSearching implements HistoryableState {
+  private readonly matchContext_: MatchContext;
 
   constructor(matchContext: MatchContext) {
     this.matchContext_ = matchContext;
+  }
+
+  get queryStr(): string {
+    return this.matchContext_.queryStr;
   }
 
   enter(): void {
@@ -683,49 +743,62 @@ class SubStateSearching implements State {
 
   transition(event: Event): State | undefined {
     console.debug("SubStateSearching: transaction(): Event: ", event);
+
+    let nextState: State | undefined = undefined;
     switch (event.kind) {
-      case "isearchForward": {
+      case "isearchForward":
         if (
           this.matchContext_.currentMatchIndex + 1 <
           this.matchContext_.matches.length
         ) {
           // 前方あり
-          return new SubStateSearching({
+          nextState = new SubStateSearching({
             ...this.matchContext_,
             currentMatchIndex: this.matchContext_.currentMatchIndex + 1,
           });
         } else {
           // 前方無し
-          return new SubStateReachedEnd(this.matchContext_);
+          nextState = new SubStateReachedEnd(this.matchContext_);
         }
-      }
+        break;
 
       case "isearchBackward":
         // 同じマッチ位置で前方検索から後方検索に移行
-        return new SubStateSearchingBackward(this.matchContext_);
+        nextState = new SubStateSearchingBackward(this.matchContext_);
+        break;
 
       case "queryChanged":
         // クエリ変更
-        return onQueryChangedForward(
+        nextState = onQueryChangedForward(
           this.matchContext_.searchContext,
           event.query
         );
+        break;
 
       default:
         break;
     }
-    return undefined;
+
+    if (nextState != null) {
+      // 移動前に自身を履歴に積んでおく
+      this.matchContext_.searchContext.matchHistory.push(this);
+    }
+    return nextState;
   }
 }
 
 /** 後方検索中・マッチ状態
  *
  */
-class SubStateSearchingBackward implements State {
-  private matchContext_: MatchContext;
+class SubStateSearchingBackward implements HistoryableState {
+  private readonly matchContext_: MatchContext;
 
   constructor(matchContext: MatchContext) {
     this.matchContext_ = matchContext;
+  }
+
+  get queryStr(): string {
+    return this.matchContext_.queryStr;
   }
 
   enter(): void {
@@ -758,35 +831,44 @@ class SubStateSearchingBackward implements State {
 
   transition(event: Event): State | undefined {
     console.debug("SubStateSearchingBackward: transaction(): Event: ", event);
+
+    let nextState: State | undefined = undefined;
     switch (event.kind) {
       case "isearchForward":
         // 同じマッチ位置で後方検索から前方検索に移行
-        return new SubStateSearching(this.matchContext_);
+        nextState = new SubStateSearching(this.matchContext_);
+        break;
 
-      case "isearchBackward": {
+      case "isearchBackward":
         if (this.matchContext_.currentMatchIndex > 0) {
           // 後方あり
-          return new SubStateSearchingBackward({
+          nextState = new SubStateSearchingBackward({
             ...this.matchContext_,
             currentMatchIndex: this.matchContext_.currentMatchIndex - 1,
           });
         } else {
           // 後方無し
-          return new SubStateReachedEndBackward(this.matchContext_);
+          nextState = new SubStateReachedEndBackward(this.matchContext_);
         }
-      }
+        break;
 
       case "queryChanged":
         // クエリ変更
-        return onQueryChangedBackward(
+        nextState = onQueryChangedBackward(
           this.matchContext_.searchContext,
           event.query
         );
+        break;
 
       default:
         break;
     }
-    return undefined;
+
+    if (nextState != null) {
+      // 移動前に自身を履歴に積んでおく
+      this.matchContext_.searchContext.matchHistory.push(this);
+    }
+    return nextState;
   }
 }
 
@@ -794,7 +876,7 @@ class SubStateSearchingBackward implements State {
  *
  */
 class SubStateReachedEnd implements State {
-  private matchContext_: MatchContext;
+  private readonly matchContext_: MatchContext;
 
   constructor(matchContext: MatchContext) {
     this.matchContext_ = matchContext;
@@ -869,7 +951,7 @@ class SubStateReachedEnd implements State {
  *
  */
 class SubStateReachedEndBackward implements State {
-  private matchContext_: MatchContext;
+  private readonly matchContext_: MatchContext;
 
   constructor(matchContext: MatchContext) {
     this.matchContext_ = matchContext;
@@ -943,12 +1025,17 @@ class SubStateReachedEndBackward implements State {
 /** 検索中・終端到達後ラップアラウンド中状態
  *
  */
-class SubStateWrapped implements State {
-  private matchContext_: MatchContext;
+class SubStateWrapped implements HistoryableState {
+  private readonly matchContext_: MatchContext;
 
   constructor(matchContext: MatchContext) {
     this.matchContext_ = matchContext;
   }
+
+  get queryStr(): string {
+    return this.matchContext_.queryStr;
+  }
+
   enter(): void {
     console.debug("SubStateWrapped: enter()");
     // input box 調整
@@ -994,50 +1081,64 @@ class SubStateWrapped implements State {
 
   transition(event: Event): State | undefined {
     console.debug("SubStateWrapped: transaction(): Event: ", event);
+
+    let nextState: State | undefined = undefined;
     switch (event.kind) {
-      case "isearchForward": {
+      case "isearchForward":
         if (
           this.matchContext_.currentMatchIndex + 1 <
           this.matchContext_.matches.length
         ) {
           // 前方あり
-          return new SubStateWrapped({
+          nextState = new SubStateWrapped({
             ...this.matchContext_,
             currentMatchIndex: this.matchContext_.currentMatchIndex + 1,
           });
         } else {
           // 前方無し
-          return new SubStateReachedEnd(this.matchContext_);
+          nextState = new SubStateReachedEnd(this.matchContext_);
         }
-      }
+        break;
 
       case "isearchBackward":
         // その場で後方検索に反転
-        return new SubStateWrappedBackward(this.matchContext_);
+        nextState = new SubStateWrappedBackward(this.matchContext_);
+        break;
 
       case "queryChanged":
         // クエリ変更
-        return onQueryChangedForward(
+        nextState = onQueryChangedForward(
           this.matchContext_.searchContext,
           event.query
         );
+        break;
 
       default:
         break;
     }
-    return undefined;
+
+    if (nextState != null) {
+      // 移動前に自身を履歴に積んでおく
+      this.matchContext_.searchContext.matchHistory.push(this);
+    }
+    return nextState;
   }
 }
 
 /** 後方検索中・先頭到達後ラップアラウンド中状態
  *
  */
-class SubStateWrappedBackward implements State {
-  private matchContext_: MatchContext;
+class SubStateWrappedBackward implements HistoryableState {
+  private readonly matchContext_: MatchContext;
 
   constructor(matchContext: MatchContext) {
     this.matchContext_ = matchContext;
   }
+
+  get queryStr(): string {
+    return this.matchContext_.queryStr;
+  }
+
   enter(): void {
     console.debug("SubStateWrappedBackward: enter()");
     // input box 調整
@@ -1083,35 +1184,44 @@ class SubStateWrappedBackward implements State {
 
   transition(event: Event): State | undefined {
     console.debug("SubStateWrappedBackward: transaction(): Event: ", event);
+
+    let nextState: State | undefined = undefined;
     switch (event.kind) {
       case "isearchForward":
         // その場で前方検索に反転
-        return new SubStateWrapped(this.matchContext_);
+        nextState = new SubStateWrapped(this.matchContext_);
+        break;
 
-      case "isearchBackward": {
+      case "isearchBackward":
         if (this.matchContext_.currentMatchIndex > 0) {
           // 後方あり
-          return new SubStateWrappedBackward({
+          nextState = new SubStateWrappedBackward({
             ...this.matchContext_,
             currentMatchIndex: this.matchContext_.currentMatchIndex - 1,
           });
         } else {
           // 後方無し
-          return new SubStateReachedEndBackward(this.matchContext_);
+          nextState = new SubStateReachedEndBackward(this.matchContext_);
         }
-      }
+        break;
 
       case "queryChanged":
         // クエリ変更
-        return onQueryChangedBackward(
+        nextState = onQueryChangedBackward(
           this.matchContext_.searchContext,
           event.query
         );
+        break;
 
       default:
         break;
     }
-    return undefined;
+
+    if (nextState != null) {
+      // 移動前に自身を履歴に積んでおく
+      this.matchContext_.searchContext.matchHistory.push(this);
+    }
+    return nextState;
   }
 }
 
@@ -1135,11 +1245,12 @@ const onQueryChangedForward = (
       searchContext.context.migemo,
       searchContext.editor,
       queryStr,
-      searchContext.initialSelection // TODO DELで過去のマッチ位置に戻る対応。これだと単に最初から探すだけ。
+      searchContext.initialSelection
     );
 
     const matchContext: MatchContext = {
       searchContext,
+      queryStr,
       matches,
       initialMatchIndex: idx,
       currentMatchIndex: idx,
@@ -1174,7 +1285,7 @@ const onQueryChangedBackward = (
     searchContext.context.migemo,
     searchContext.editor,
     queryStr,
-    searchContext.initialSelection // TODO DELで過去のマッチ位置に戻る対応。これだと単に最初から探すだけ。
+    searchContext.initialSelection
   );
 
   let i = -1;
@@ -1196,6 +1307,7 @@ const onQueryChangedBackward = (
 
   const matchContext: MatchContext = {
     searchContext,
+    queryStr,
     matches,
     initialMatchIndex: i,
     currentMatchIndex: i,
