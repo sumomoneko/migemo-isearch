@@ -81,7 +81,6 @@
         "command": "migemo-isearch.isearch-delete-char",
         "when": "migemo-isearch.inIsearchMode"
       },
-
       {
         "key": "alt+p",
         "command": "migemo-isearch.isearch-ring-retreat",
@@ -103,6 +102,374 @@
         "mac": "cmd+n",
         "command": "migemo-isearch.isearch-ring-advance",
         "when": "migemo-isearch.inIsearchMode && config.migemo-isearch.useMetaPrefixMacCmd"
+      },
+      {
+        "key": "right",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing",
+        "args": {
+          "then": "cursorRight"
+        }
+      },
+      {
+        "key": "ctrl+f",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled",
+        "args": {
+          "then": "emacs-mcx.forwardChar"
+        }
+      },
+      {
+        "key": "left",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing",
+        "args": {
+          "then": "cursorLeft"
+        }
+      },
+      {
+        "key": "ctrl+b",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled",
+        "args": {
+          "then": "emacs-mcx.backwardChar"
+        }
+      },
+      {
+        "key": "up",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing",
+        "args": {
+          "then": "cursorUp"
+        }
+      },
+      {
+        "key": "ctrl+p",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled",
+        "args": {
+          "then": "emacs-mcx.previousLine"
+        }
+      },
+      {
+        "key": "down",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing",
+        "args": {
+          "then": "cursorDown"
+        }
+      },
+      {
+        "key": "ctrl+n",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled",
+        "args": {
+          "then": "emacs-mcx.nextLine"
+        }
+      },
+      {
+        "key": "home",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing",
+        "args": {
+          "then": "cursorHome"
+        }
+      },
+      {
+        "key": "ctrl+a",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled",
+        "args": {
+          "then": "emacs-mcx.moveBeginningOfLine"
+        }
+      },
+      {
+        "key": "end",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing",
+        "args": {
+          "then": "cursorEnd"
+        }
+      },
+      {
+        "key": "ctrl+e",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled",
+        "args": {
+          "then": "emacs-mcx.moveEndOfLine"
+        }
+      },
+      {
+        "key": "alt+f",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && !config.migemo-isearch.useMetaPrefixMacCmd",
+        "args": {
+          "then": "emacs-mcx.forwardWord"
+        }
+      },
+      {
+        "key": "alt+f",
+        "mac": "cmd+f",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && config.migemo-isearch.useMetaPrefixMacCmd",
+        "args": {
+          "then": "emacs-mcx.forwardWord"
+        }
+      },
+      {
+        "key": "alt+b",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && !config.migemo-isearch.useMetaPrefixMacCmd",
+        "args": {
+          "then": "emacs-mcx.backwardWord"
+        }
+      },
+      {
+        "key": "alt+b",
+        "mac": "cmd+b",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && config.migemo-isearch.useMetaPrefixMacCmd",
+        "args": {
+          "then": "emacs-mcx.backwardWord"
+        }
+      },
+      {
+        "key": "alt+m",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && !config.migemo-isearch.useMetaPrefixMacCmd",
+        "args": {
+          "then": "emacs-mcx.backToIndentation"
+        }
+      },
+      {
+        "key": "alt+m",
+        "mac": "cmd+m",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && config.migemo-isearch.useMetaPrefixMacCmd",
+        "args": {
+          "then": "emacs-mcx.backToIndentation"
+        }
+      },
+      {
+        "key": "pagedown",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing",
+        "args": {
+          "then": "cursorPageDown"
+        }
+      },
+      {
+        "key": "ctrl+v",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled",
+        "args": {
+          "then": "emacs-mcx.scrollUpCommand"
+        }
+      },
+      {
+        "key": "pageup",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing",
+        "args": {
+          "then": "cursorPageUp"
+        }
+      },
+      {
+        "key": "alt+v",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && !config.migemo-isearch.useMetaPrefixMacCmd",
+        "args": {
+          "then": "emacs-mcx.scrollDownCommand"
+        }
+      },
+      {
+        "key": "alt+v",
+        "mac": "cmd+v",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && config.migemo-isearch.useMetaPrefixMacCmd",
+        "args": {
+          "then": "emacs-mcx.scrollDownCommand"
+        }
+      },
+      {
+        "key": "alt+shift+.",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && !config.migemo-isearch.useMetaPrefixMacCmd",
+        "args": {
+          "then": "emacs-mcx.endOfBuffer"
+        }
+      },
+      {
+        "key": "alt+shift+.",
+        "mac": "cmd+shift+.",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && config.migemo-isearch.useMetaPrefixMacCmd",
+        "args": {
+          "then": "emacs-mcx.endOfBuffer"
+        }
+      },
+      {
+        "key": "alt+shift+,",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && !config.migemo-isearch.useMetaPrefixMacCmd",
+        "args": {
+          "then": "emacs-mcx.beginningOfBuffer"
+        }
+      },
+      {
+        "key": "alt+shift+,",
+        "mac": "cmd+shift+,",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && config.migemo-isearch.useMetaPrefixMacCmd",
+        "args": {
+          "then": "emacs-mcx.beginningOfBuffer"
+        }
+      },
+      {
+        "key": "alt+g alt+g",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && !config.migemo-isearch.useMetaPrefixMacCmd",
+        "args": {
+          "then": "workbench.action.gotoLine"
+        }
+      },
+      {
+        "key": "alt+g alt+g",
+        "mac": "cmd+g cmd+g",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && config.migemo-isearch.useMetaPrefixMacCmd",
+        "args": {
+          "then": "workbench.action.gotoLine"
+        }
+      },
+      {
+        "key": "alt+g g",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && !config.migemo-isearch.useMetaPrefixMacCmd",
+        "args": {
+          "then": "workbench.action.gotoLine"
+        }
+      },
+      {
+        "key": "alt+g g",
+        "mac": "cmd+g g",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && config.migemo-isearch.useMetaPrefixMacCmd",
+        "args": {
+          "then": "workbench.action.gotoLine"
+        }
+      },
+      {
+        "key": "ctrl+w",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled"
+      },
+      {
+        "key": "alt+w",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && !config.migemo-isearch.useMetaPrefixMacCmd"
+      },
+      {
+        "key": "alt+w",
+        "mac": "cmd+w",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && config.migemo-isearch.useMetaPrefixMacCmd"
+      },
+      {
+        "key": "ctrl+y",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled"
+      },
+      {
+        "key": "alt+y",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && !config.migemo-isearch.useMetaPrefixMacCmd"
+      },
+      {
+        "key": "alt+y",
+        "mac": "cmd+y",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && config.migemo-isearch.useMetaPrefixMacCmd"
+      },
+      {
+        "key": "ctrl+o",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled"
+      },
+      {
+        "key": "ctrl+m",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled"
+      },
+      {
+        "key": "ctrl+j",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled"
+      },
+      {
+        "key": "ctrl+x ctrl+o",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled",
+        "args": {
+          "then": "emacs-mcx.deleteBlankLines"
+        }
+      },
+      {
+        "key": "ctrl+x h",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled",
+        "args": {
+          "then": "editor.action.selectAll"
+        }
+      },
+      {
+        "key": "ctrl+x u",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled",
+        "args": {
+          "then": "undo"
+        }
+      },
+      {
+        "key": "ctrl+/",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled",
+        "args": {
+          "then": "undo"
+        }
+      },
+      {
+        "key": "ctrl+shift+-",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled",
+        "args": {
+          "then": "undo"
+        }
+      },
+      {
+        "key": "ctrl+;",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled",
+        "args": {
+          "then": "editor.action.commentLine"
+        }
+      },
+      {
+        "key": "alt+;",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && !config.migemo-isearch.useMetaPrefixMacCmd",
+        "args": {
+          "then": "editor.action.blockComment"
+        }
+      },
+      {
+        "key": "alt+;",
+        "mac": "cmd+;",
+        "command": "migemo-isearch.exit",
+        "when": "migemo-isearch.inIsearchMode && !isComposing && migemo-isearch.isEmacsMcxInstalled && config.migemo-isearch.useMetaPrefixMacCmd",
+        "args": {
+          "then": "editor.action.blockComment"
+        }
       }
     ]
   },

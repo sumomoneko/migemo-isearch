@@ -51,6 +51,16 @@ export function activate(context: vscode.ExtensionContext) {
     isearch.transaction({ kind: "isearchBackward" })
   );
 
+  registerCommand("migemo-isearch.exit", async (args) => {
+    isearch.transaction({ kind: "inputBoxAccepted" });
+    if (args == null || typeof args !== "object" || Array.isArray(args)) {
+      return;
+    }
+    if ("then" in args && typeof args.then === "string") {
+      await vscode.commands.executeCommand(args.then);
+    }
+  });
+
   registerCommand("migemo-isearch.isearch-abort", () =>
     isearch.transaction({ kind: "isearchAbort" })
   );
@@ -63,6 +73,20 @@ export function activate(context: vscode.ExtensionContext) {
   registerCommand("migemo-isearch.isearch-ring-advance", () =>
     isearch.transaction({ kind: "isearchRingAdvance" })
   );
+
+  // Awesome Emacs Keymap がインストールされているかどうかの context 設定
+  const isEmacsMcxInstalled = vscode.extensions.all.some((elem) => {
+    return elem.id === "tuttieee.emacs-mcx";
+  });
+  if (isEmacsMcxInstalled) {
+    const ctxKey = new ContextKey("migemo-isearch.isEmacsMcxInstalled");
+    ctxKey.set(true);
+    context.subscriptions.push({
+      dispose: () => {
+        ctxKey.set(false);
+      },
+    });
+  }
 
   /*
   context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(

@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD033 MD013 -->
+
 # migemo-isearch
 
 [jsmigemo](https://github.com/oguna/jsmigemo)を利用し、ローマ字のまま日本語をインクリメンタル検索するための機能拡張です。
@@ -10,14 +12,15 @@
 
 ## 設定方法
 
-デフォルトでは、以下に示すように、emacs に合わせたキーボードバインディングとしています:
+Emacs のインクリメンタルサーチの様に使う場合は、とくに設定は不要です。
+デフォルトでは、以下に示すように emacs に合わせたキーボードバインディングとしています:
 
-| コマンド                          | 説明                           | デフォルトバインド |
-| --------------------------------- | ------------------------------ | ------------------ |
-| `migemo-isearch.isearch-forward`  | 前方インクリメンタルサーチ開始 | ctrl+s             |
-| `migemo-isearch.isearch-backward` | 後方インクリメンタルサーチ開始 | ctrl+r             |
+| コマンド                          | 説明                           | デフォルトバインド           |
+| --------------------------------- | ------------------------------ | ---------------------------- |
+| `migemo-isearch.isearch-forward`  | 前方インクリメンタルサーチ開始 | <kbd>ctrl</kbd>+<kbd>s</kbd> |
+| `migemo-isearch.isearch-backward` | 後方インクリメンタルサーチ開始 | <kbd>ctrl</kbd>+<kbd>r</kbd> |
 
-なお、例えば[Awesome Emacs Keymap](https://marketplace.visualstudio.com/items?itemName=tuttieee.emacs-mcx)を利用している場合、検索コマンドの競合を避けるために`keybindings.json`に以下を追加し、Awesome Emacs Keymap の設定を無効化する必要があります。
+なお、例えば[Awesome Emacs Keymap](https://marketplace.visualstudio.com/items?itemName=tuttieee.emacs-mcx)を利用している場合、検索コマンドの競合を避けるために`keybindings.json`に以下を追加し、Awesome Emacs Keymap の設定を無効化・調整する必要があります。
 
 ```json
 {
@@ -39,62 +42,131 @@
     "key": "ctrl+g",
     "command": "workbench.action.closeQuickOpen",
     "when": "inQuickOpen && !migemo-isearch.inIsearchMode"
+},
+{
+    "key": "ctrl+n",
+    "command": "-workbench.action.quickOpenSelectNext",
+    "when": "inQuickOpen"
+},
+{
+    "key": "ctrl+n",
+    "command": "workbench.action.quickOpenSelectNext",
+    "when": "inQuickOpen && !migemo-isearch.inIsearchMode"
+},
+{
+    "key": "ctrl+p",
+    "command": "-workbench.action.quickOpenSelectPrevious",
+    "when": "inQuickOpen"
+},
+{
+    "key": "ctrl+p",
+    "command": "workbench.action.quickOpenSelectPrevious",
+    "when": "inQuickOpen && !migemo-isearch.inIsearchMode"
 }
 ```
 
+### context
+
 インクリメンタルサーチを開始し input box が表示されている状態では、`migemo-isearch.inIsearchMode`という[context](https://code.visualstudio.com/api/references/when-clause-contexts)が有効になっています。
 
-この context はキーバインド設定の`when`句に利用することができ、デフォルトで以下のキーがバインドされています。
+なお、[Awesome Emacs Keymap](https://marketplace.visualstudio.com/items?itemName=tuttieee.emacs-mcx)がインストールされいる場合、
+`migemo-isearch.isEmacsMcxInstalled`というコンテキストが有効になっています。
 
-| コマンド                              | 説明              | デフォルトバインド |
-| ------------------------------------- | ----------------- | ------------------ |
-| `migemo-isearch.isearch-forward`      | 前方次検索        | ctrl+s             |
-| `migemo-isearch.isearch-backward`     | 後方次検索        | ctrl+r             |
-| `migemo-isearch.isearch-delete-char`  | 検索文字削除/戻る | backspace          |
-| `migemo-isearch.isearch-abort`        | 検索中断          | ctrl+g             |
-| `migemo-isearch.isearch-ring-retreat` | 検索履歴を遡る    | alt+p              |
-| `migemo-isearch.isearch-ring-forward` | 検索履歴を進める  | alt+n              |
+これらの context はキーバインド設定の`when`句に利用することができ、デフォルトで以下のキーがバインドされています。
 
-## 設定項目
+| コマンド                                 | 説明              | デフォルトバインド           |
+| ---------------------------------------- | ----------------- | ---------------------------- |
+| `migemo-isearch.isearch-repeat-forward`  | 前方次検索        | <kbd>ctrl</kbd>+<kbd>s</kbd> |
+| `migemo-isearch.isearch-repeat-backward` | 後方次検索        | <kbd>ctrl</kbd>+<kbd>r</kbd> |
+| `migemo-isearch.isearch-delete-char`     | 検索文字削除/戻る | <kbd>backspace</kbd>         |
+| `migemo-isearch.isearch-exit`            | 検索完了          | <kbd>enter</kbd>             |
+| `migemo-isearch.isearch-abort`           | 検索中断          | <kbd>ctrl</kbd>+<kbd>g</kbd> |
+| `migemo-isearch.isearch-ring-retreat`    | 検索履歴を遡る    | <kbd>alt</kbd>+<kbd>p</kbd>  |
+| `migemo-isearch.isearch-ring-forward`    | 検索履歴を進める  | <kbd>alt</kbd>+<kbd>n</kbd>  |
+
+## Config 項目
 
 ### `migemo-isearch.useMetaPrefixMacCmd`
 
-true を設定した場合、オプション(⌥)キーの代わりにコマンド(⌘)キーを利用します。この設定は macOS のみ有効です。
+true を設定した場合、オプション(<kbd>⌥</kbd>)キーの代わりにコマンド(<kbd>⌘</kbd>)キーを利用します。この設定は macOS のみ有効です。
 (c.f. [emacs-mcx.useMetaPrefixMacCmd](https://github.com/whitphx/vscode-emacs-mcx#emacs-mcxusemetaprefixescape))
 
 ## 使い方
 
-ctrl+s で、ファイル終端(前方)に向けたインクリメンタル検索を開始します(isearch-forward)。
-ctrl-r で、ファイル先頭(後方)に向けたのインクリメンタル検索を開始します(isearch-backward)。
+<kbd>ctrl</kbd>+<kbd>s</kbd> (`isearch-forward`) で、ファイル終端(前方)に向けたインクリメンタル検索を開始します。
 
-検索文字列が無い状態でもう一度 ctrl+s(または ctrl+r)をタイプすると、最後に検索した文字列の再検索を行います。
+<kbd>ctrl</kbd>+<kbd>r</kbd> (`isearch-backward`) で、ファイル先頭(後方)に向けたのインクリメンタル検索を開始します。
 
-文字列の検索に成功している状態で、ctrl+s(または ctrl+r)をタイプすると、次(前)のマッチ位置にジャンプしていきます。
-この操作は何度でも繰り返すことで、次々にジャンプしていくことが出来ます。`backspace`(`migemo-isearch.isearch-delete-char`)をタイプすると、ジャンプを 1 回取り消します。
+検索文字列が無い状態でもう一度 <kbd>ctrl</kbd>+<kbd>s</kbd>(または <kbd>ctrl</kbd>+<kbd>r</kbd>)をタイプすると、最後に検索した文字列の再検索を行います。
 
-以前に検索した文字列を再利用するには、サーチリング(search ring)を使います。
-コマンド alt+p (isearch-ring-retreat)または alt+n (isearch-ring-advance)で、リングを移動して再使用したい文字列を取り出します。
+文字列の検索に成功している状態で<kbd>ctrl</kbd>+<kbd>s</kbd>(または <kbd>ctrl</kbd>+<kbd>r</kbd>)をタイプすると、タイプする毎に次(前)のマッチ位置にジャンプしていきます。
+<kbd>backspace</kbd> (`isearch-delete-char`)をタイプすると、一回前の位置に戻ります。
 
-サーチリングの中に保存されている最近使用された検索文字列の数は、現在のところ固定で 16 です。
+検索を完了する毎に、検索文字列がサーチリング(search ring)に保存されます。
+コマンド <kbd>alt</kbd>+<kbd>p</kbd> (`isearch-ring-retreat`)または <kbd>alt</kbd>+<kbd>n</kbd> (`isearch-ring-advance`)で、リング内の文字列を呼び出すことが出来ます。
+
+サーチリングの中に保存されている過去の検索文字列の数は、現在のところ固定で 16 です。
 
 検索文字列は大文字小文字を区別しません。ただし、検索文字列に大文字が含まれていると、大文字・小文字を区別するようになります。
 
-なお migemo で熟語・複合語を検索する場合、例えば"漢字入力"をマッチしたい場合、"kanjiNyuuryoku"というように区切りを大文字にします。
+なお migemo で熟語・複合語を検索する場合、例えば"漢字入力"をマッチしたい場合には、"kanjiNyuuryoku"というように区切りを大文字にします。
 このときアルファベットの大文字小文字が区別されるようになりますが、実用上問題ないかと思います。
 
-検索中断のコマンド `migemo-isearch.isearch-abort` の動作は、多少複雑です:
+<kbd>enter</kbd>(`isearch-exit`)をタイプすると検索を終了します。あるいは、
+<kbd>left</kbd>/<kbd>right</kbd>/<kbd>up</kbd>/<kbd>down</kbd>/<kbd>home</kbd>/<kbd>end</kbd>/
+<kbd>pagedown</kbd>/<kbd>pageup</kbd>のいずれかをタイプすると検索を終了し、続いてタイプしたコマンドを実行します。
 
-1. 文字列の検索に成功している状態で`migemo-isearch.isearch-abort`をタイプすると、検索全体が取り消され、カーソルが検索開始した位置に戻ります。
-2. 検索に成功していた後に続いて失敗した文字が含まれている状態で`migemo-isearch.isearch-abort`をタイプすると、検索に失敗した文字列が取り除かれ、
+[Awesome Emacs Keymap](https://marketplace.visualstudio.com/items?itemName=tuttieee.emacs-mcx)がインストールされている場合は、以下のキーをタイプしても検索を終了し、続いて定義されているコマンドを実行します。
+
+<details>
+  <summary>詳細</summary>
+
+- <kbd>ctrl</kbd>+<kbd>f</kbd>
+- <kbd>ctrl</kbd>+<kbd>b</kbd>
+- <kbd>ctrl</kbd>+<kbd>p</kbd>
+- <kbd>ctrl</kbd>+<kbd>n</kbd>
+- <kbd>ctrl</kbd>+<kbd>a</kbd>
+- <kbd>ctrl</kbd>+<kbd>e</kbd>
+- <kbd>alt</kbd>+<kbd>f</kbd>
+- <kbd>alt</kbd>+<kbd>b</kbd>
+- <kbd>alt</kbd>+<kbd>m</kbd>
+- <kbd>ctrl</kbd>+<kbd>v</kbd>
+- <kbd>alt</kbd>+<kbd>v</kbd>
+- <kbd>alt</kbd>+<kbd>shift</kbd>+<kbd>.</kbd>
+- <kbd>alt</kbd>+<kbd>shift</kbd>+<kbd>,</kbd>
+- <kbd>alt</kbd>+<kbd>g</kbd> <kbd>alt</kbd>+<kbd>g</kbd>
+- <kbd>alt</kbd>+<kbd>g</kbd> <kbd>g</kbd>
+- <kbd>ctrl</kbd>+<kbd>x</kbd> <kbd>ctrl</kbd>+<kbd>o</kbd>
+- <kbd>ctrl</kbd>+<kbd>x</kbd> <kbd>h</kbd>
+- <kbd>ctrl</kbd>+<kbd>x</kbd> <kbd>u</kbd>
+- <kbd>ctrl</kbd>+<kbd>/</kbd>
+- <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>-</kbd>
+- <kbd>ctrl</kbd>+<kbd>;</kbd>
+- <kbd>alt</kbd>+<kbd>;</kbd>
+- <kbd>ctrl</kbd>+<kbd>w</kbd>
+- <kbd>alt</kbd>+<kbd>w</kbd>
+- <kbd>ctrl</kbd>+<kbd>y</kbd>
+- <kbd>alt</kbd>+<kbd>y</kbd>
+- <kbd>ctrl</kbd>+<kbd>o</kbd>
+- <kbd>ctrl</kbd>+<kbd>m</kbd>
+- <kbd>ctrl</kbd>+<kbd>j</kbd>
+
+</details><br>
+
+検索を中断する場合は<kbd>ctrl</kbd>+<kbd>g</kbd> (`isearch-abort`) をタイプしますが、その動作は状況に依存します:
+
+1. 文字列の検索に成功している状態で<kbd>ctrl</kbd>+<kbd>g</kbd>をタイプすると、検索全体が取り消されカーソルが検索開始した位置に戻ります。
+2. 検索に成功していた後に続いて失敗した文字が含まれている状態で<kbd>ctrl</kbd>+<kbd>g</kbd>をタイプすると、検索に失敗した文字列が取り除かれ、
    最後に成功した位置に戻ります。  
-   この状態で 2 回目の`migemo-isearch.isearch-abort`をタイプすると、1.の処理となって検索全体が取り消されます。
+   この状態で 2 回目の<kbd>ctrl</kbd>+<kbd>g</kbd>をタイプすると、1.の処理となって検索全体が取り消されます。
 
 ## ToDo
 
-現在の所、基本的なインクリメンタルサーチしか対応していません。今後予定しているのは以下の通りです:
+今後予定しているのは以下の通りです:
 
-- isearch-yank-kill などの挙動
-- 大文字小文字の処理切り替えなど
+- isearch-yank-\* など
+- query-replace への移行機能
+- 大文字小文字区別の切り替え機能
 - [ace-jump-mode](http://emacs.rubikitch.com/ace-isearch/)との統合
 
 ## 参考
