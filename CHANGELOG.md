@@ -4,6 +4,12 @@ All notable changes to the "migemo-isearch" extension will be documented in this
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.4.0] - 2023-01-08
+
+### Changed
+
+- enter以外のコマンドでも検索終了できるよう変更
+
 ## [0.3.0] - 2023-01-07
 
 ### Added
