@@ -63,22 +63,22 @@
       },
       {
         "key": "ctrl+g",
-        "command": "migemo-isearch.cancel",
+        "command": "migemo-isearch.isearch-abort",
         "when": "migemo-isearch.inIsearchMode"
       },
       {
         "key": "ctrl+s",
-        "command": "migemo-isearch.isearch-forward",
+        "command": "migemo-isearch.isearch-repeat-forward",
         "when": "migemo-isearch.inIsearchMode"
       },
       {
         "key": "ctrl+r",
-        "command": "migemo-isearch.isearch-backward",
+        "command": "migemo-isearch.isearch-repeat-backward",
         "when": "migemo-isearch.inIsearchMode"
       },
       {
         "key": "backspace",
-        "command": "migemo-isearch.del",
+        "command": "migemo-isearch.isearch-delete-char",
         "when": "migemo-isearch.inIsearchMode"
       },
 

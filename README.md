@@ -46,13 +46,14 @@
 
 この context はキーバインド設定の`when`句に利用することができ、デフォルトで以下のキーがバインドされています。
 
-| コマンド                              | 説明             | デフォルトバインド |
-| ------------------------------------- | ---------------- | ------------------ |
-| `migemo-isearch.isearch-forward`      | 前方次検索       | ctrl+s             |
-| `migemo-isearch.isearch-backward`     | 後方次検索       | ctrl+r             |
-| `migemo-isearch.cancel`               | 検索中断         | ctrl+g             |
-| `migemo-isearch.isearch-ring-retreat` | 検索履歴を遡る   | alt+p              |
-| `migemo-isearch.isearch-ring-forward` | 検索履歴を進める | alt+n              |
+| コマンド                              | 説明              | デフォルトバインド |
+| ------------------------------------- | ----------------- | ------------------ |
+| `migemo-isearch.isearch-forward`      | 前方次検索        | ctrl+s             |
+| `migemo-isearch.isearch-backward`     | 後方次検索        | ctrl+r             |
+| `migemo-isearch.isearch-delete-char`  | 検索文字削除/戻る | backspace          |
+| `migemo-isearch.isearch-abort`        | 検索中断          | ctrl+g             |
+| `migemo-isearch.isearch-ring-retreat` | 検索履歴を遡る    | alt+p              |
+| `migemo-isearch.isearch-ring-forward` | 検索履歴を進める  | alt+n              |
 
 ## 設定項目
 
@@ -69,7 +70,7 @@ ctrl-r で、ファイル先頭(後方)に向けたのインクリメンタル�
 検索文字列が無い状態でもう一度 ctrl+s(または ctrl+r)をタイプすると、最後に検索した文字列の再検索を行います。
 
 文字列の検索に成功している状態で、ctrl+s(または ctrl+r)をタイプすると、次(前)のマッチ位置にジャンプしていきます。
-この操作は何度でも繰り返すことで、次々にジャンプしていくことが出来ます。`backspace`をタイプすると、ジャンプを 1 回取り消します。
+この操作は何度でも繰り返すことで、次々にジャンプしていくことが出来ます。`backspace`(`migemo-isearch.isearch-delete-char`)をタイプすると、ジャンプを 1 回取り消します。
 
 以前に検索した文字列を再利用するには、サーチリング(search ring)を使います。
 コマンド alt+p (isearch-ring-retreat)または alt+n (isearch-ring-advance)で、リングを移動して再使用したい文字列を取り出します。
@@ -81,12 +82,12 @@ ctrl-r で、ファイル先頭(後方)に向けたのインクリメンタル�
 なお migemo で熟語・複合語を検索する場合、例えば"漢字入力"をマッチしたい場合、"kanjiNyuuryoku"というように区切りを大文字にします。
 このときアルファベットの大文字小文字が区別されるようになりますが、実用上問題ないかと思います。
 
-検索中断のコマンド `migemo-isearch.cancel` の動作は、多少複雑です:
+検索中断のコマンド `migemo-isearch.isearch-abort` の動作は、多少複雑です:
 
-1. 文字列の検索に成功している状態で`migemo-isearch.cancel`をタイプすると、検索全体が取り消され、カーソルが検索開始した位置に戻ります。
-2. 検索に成功していた後に続いて失敗した文字が含まれている状態で`migemo-isearch.cancel`をタイプすると、検索に失敗した文字列が取り除かれ、
+1. 文字列の検索に成功している状態で`migemo-isearch.isearch-abort`をタイプすると、検索全体が取り消され、カーソルが検索開始した位置に戻ります。
+2. 検索に成功していた後に続いて失敗した文字が含まれている状態で`migemo-isearch.isearch-abort`をタイプすると、検索に失敗した文字列が取り除かれ、
    最後に成功した位置に戻ります。  
-   この状態で 2 回目の`migemo-isearch.cancel`をタイプすると、1.の処理となって検索全体が取り消されます。
+   この状態で 2 回目の`migemo-isearch.isearch-abort`をタイプすると、1.の処理となって検索全体が取り消されます。
 
 ## ToDo
 

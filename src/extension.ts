@@ -44,11 +44,18 @@ export function activate(context: vscode.ExtensionContext) {
   registerCommand("migemo-isearch.isearch-backward", () =>
     isearch.transaction({ kind: "isearchBackward" })
   );
-  registerCommand("migemo-isearch.cancel", () =>
-    isearch.transaction({ kind: "cancel" })
+  registerCommand("migemo-isearch.isearch-repeat-forward", () =>
+    isearch.transaction({ kind: "isearchForward" })
   );
-  registerCommand("migemo-isearch.del", () =>
-    isearch.transaction({ kind: "del" })
+  registerCommand("migemo-isearch.isearch-repeat-backward", () =>
+    isearch.transaction({ kind: "isearchBackward" })
+  );
+
+  registerCommand("migemo-isearch.isearch-abort", () =>
+    isearch.transaction({ kind: "isearchAbort" })
+  );
+  registerCommand("migemo-isearch.isearch-delete-char", () =>
+    isearch.transaction({ kind: "isearchDeleteChar" })
   );
   registerCommand("migemo-isearch.isearch-ring-retreat", () =>
     isearch.transaction({ kind: "isearchRingRetreat" })
@@ -119,8 +126,8 @@ class Isearch {
 interface Events {
   isearchForward: Record<string, unknown>;
   isearchBackward: Record<string, unknown>;
-  cancel: Record<string, unknown>;
-  del: Record<string, unknown>;
+  isearchAbort: Record<string, unknown>;
+  isearchDeleteChar: Record<string, unknown>;
   queryChanged: { query: string };
   inputBoxAccepted: Record<string, unknown>;
   inputBoxHided: Record<string, unknown>;
@@ -536,7 +543,7 @@ class StateSearching implements State {
         break;
       }
 
-      case "del": {
+      case "isearchDeleteChar": {
         console.debug(this.searchContext_.matchHistory);
         // マッチした履歴があれば戻る
         const state = this.searchContext_.matchHistory.pop();
@@ -574,7 +581,7 @@ class StateSearching implements State {
         nextState = new StateInit(this.searchContext_.context);
         break;
 
-      case "cancel":
+      case "isearchAbort":
         // 検索取り消し。カーソル位置を復元する
         moveCursor(
           this.searchContext_.editor,
@@ -973,7 +980,7 @@ class SubStateReachedEnd implements State {
           event.query
         );
 
-      case "cancel":
+      case "isearchAbort":
         // ^G
         if (this.matchContext_.matches.length === 0) {
           const state = this.matchContext_.searchContext.matchHistory.pop();
@@ -1064,7 +1071,7 @@ class SubStateReachedEndBackward implements State {
           event.query
         );
 
-      case "cancel":
+      case "isearchAbort":
         // ^G
         if (this.matchContext_.matches.length === 0) {
           const state = this.matchContext_.searchContext.matchHistory.pop();
